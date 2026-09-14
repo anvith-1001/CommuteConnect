@@ -127,7 +127,14 @@ The service uses parameterized TypeORM queries and PostgreSQL transactions. Type
 
 CommuteConnect can be run locally using **Docker** or by running the frontend and backend separately.
 
-**Important: Set up the .env for both backend and frontend before running.**
+**Important: Set up the .env at root of the project before running.**
+
+Following are placeholders:
+
+POSTGRES_PASSWORD=commuteconnect_dev_2026
+JWT_SECRET=put-a-long-random-secret-here-at-least-32-bytes
+
+
 
 ## Option 1 — Docker
 
