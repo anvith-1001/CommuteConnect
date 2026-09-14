@@ -1,0 +1,430 @@
+<section class="narrow">
+  <a class="text-link" routerLink="/commutes">← Browse commutes</a>
+  @if (actionError()) {
+    <p class="error-banner" role="alert">{{ actionError() }}</p>
+  }
+  @if (loading()) {
+    <cc-state kind="loading" title="Loading commute…" />
+  } @else if (error()) {
+    <cc-state
+      kind="error"
+      title="Couldn’t load this commute"
+      [message]="error()"
+      (retry)="load()"
+    />
+  } @else if (post(); as p) {
+    <article id="ride-details" class="panel detail-panel">
+      <div class="card-top">
+        <p class="eyebrow">{{ p.departureAt | date: 'EEEE, d MMMM y' }}</p>
+        <span id="ride-status" class="badge">
+          {{
+            p.deletedAt
+              ? 'Cancelled'
+              : p.rideStatus === 'in_progress'
+                ? 'On ride'
+                : active
+                  ? 'Upcoming'
+                  : 'Past commute'
+          }}
+        </span>
+      </div>
+      <h1 class="route-heading">
+        <span class="route-point">{{ p.origin }}</span>
+        <span class="route-arrow">→</span>
+        <span class="route-point">{{ p.destination }}</span>
+      </h1>
+      <p class="subtle driver-name">Offered by <strong>{{ p.owner.name }}</strong></p>
+      <div class="detail-facts">
+        <div>
+          <span class="eyebrow">DEPARTURE</span>
+          <strong>{{ p.departureAt | date: 'shortTime' }}</strong>
+        </div>
+        @if (!isHistory) {
+          <div>
+            <span class="eyebrow">AVAILABLE SEATS</span>
+            <strong>
+              {{ p.availableSeats }}
+              <span class="small subtle">of {{ p.seats }}</span>
+            </strong>
+          </div>
+        }
+        @if (p.via) {
+          <div>
+            <span class="eyebrow">VIA STOP</span>
+            <strong>{{ p.via }}</strong>
+          </div>
+        }
+      </div>
+      <div class="detail-secondary-row">
+        @if (p.originLat || p.originLng) {
+          <button class="button secondary view-map-btn" type="button" (click)="mapMode.set('view')">
+            View origin on map
+          </button>
+        }
+        @if (p.vehicleNumber) {
+          <div class="vehicle-number">
+            <span class="eyebrow">VEHICLE PLATE</span>
+            <strong>{{ p.vehicleNumber }}</strong>
+          </div>
+        }
+      </div>
+      @if (p.notes) {
+        <div class="notes-box">
+          <h2>Notes</h2>
+          <p class="notes">{{ p.notes }}</p>
+        </div>
+      }
+      @if (isOwner()) {
+        @if (active) {
+          <div class="actions">
+            <a class="button secondary" [routerLink]="['/commutes', p.id, 'edit']">
+              Edit commute
+            </a>
+            <button
+              class="button danger"
+              (click)="confirmDelete.set(true)"
+              [disabled]="busy()"
+            >
+              Delete commute
+            </button>
+          </div>
+          @if (p.rideStatus === 'scheduled' && acceptedApplicants().length) {
+            <button
+              class="button"
+              type="button"
+              (click)="openStartRideVerification()"
+              [disabled]="busy()"
+            >
+              Start ride
+            </button>
+          } @else if (p.rideStatus === 'in_progress') {
+            <div class="ride-actions">
+              <button class="button" type="button" (click)="endRide()" [disabled]="busy()">
+                End ride
+              </button>
+              @if (unverifiedApplicants().length) {
+                <button
+                  class="icon-action"
+                  type="button"
+                  aria-label="Verify another passenger"
+                  (click)="openOtpVerification()"
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M7 11h10M9 7h6M8 15h8M5 3h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9l-4 3v-3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+                  </svg>
+                  <span>Verify passenger</span>
+                  <span class="action-count">{{ unverifiedApplicants().length }}</span>
+                </button>
+              }
+            </div>
+          }
+        }
+        @if (confirmDelete()) {
+          <section class="confirm-box" aria-label="Confirm cancellation">
+            <h2>Cancel this commute?</h2>
+            <p>
+              Passengers will see it as cancelled. It will remain in everyone’s history.
+            </p>
+            <div class="actions">
+              <button class="button danger" (click)="remove()" [disabled]="busy()">
+                Yes, cancel commute
+              </button>
+              <button
+                class="button secondary"
+                (click)="confirmDelete.set(false)"
+                [disabled]="busy()"
+              >
+                Keep commute
+              </button>
+            </div>
+          </section>
+        }
+      } @else {
+        @if (active) {
+          @if (
+            p.myInterest?.status === 'pending' || p.myInterest?.status === 'accepted'
+          ) {
+            <button class="button secondary" (click)="withdraw()" [disabled]="busy()">
+              {{ busy() ? 'Updating…' : 'Withdraw interest' }}
+            </button>
+          } @else if (!p.myInterest || p.myInterest.status === 'withdrawn') {
+            <button
+              class="button full"
+              (click)="interest()"
+              [disabled]="busy() || p.availableSeats === 0"
+            >
+              {{
+                p.availableSeats === 0
+                  ? 'No seats available'
+                  : busy()
+                    ? 'Sending…'
+                    : 'I’m interested'
+              }}
+            </button>
+          }
+        }
+        @if (p.myInterest?.status === 'accepted') {
+          @if (p.myInterest?.rideOtp && !p.myInterest?.boardedAt && active) {
+            <button
+              class="icon-action"
+              type="button"
+              (click)="passengerOtpOpen.set(true)"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M7 11h10M9 7h6M8 15h8M5 3h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9l-4 3v-3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+              </svg>
+              <span>View ride code</span>
+            </button>
+          } @else if (p.myInterest?.boardedAt) {
+            <p class="success-banner">Your pickup code has been verified.</p>
+          }
+          <button class="icon-action" type="button" (click)="openChat()">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M21 12a8 8 0 0 1-8 8H7l-4 2 1.5-4A8 8 0 1 1 21 12Z" />
+            </svg>
+            <span>Chat with {{ p.owner.name }}</span>
+          </button>
+        }
+      }
+    </article>
+    @if (isOwner()) {
+      <section id="passengers" class="applicants-section">
+        @if (applicantsLoading()) {
+          <cc-state kind="loading" title="Loading passengers…" />
+        } @else if (applicantsError()) {
+          <cc-state
+            kind="error"
+            title="Couldn’t load passengers"
+            [message]="applicantsError()"
+            (retry)="loadApplicants(applicantPage())"
+          />
+        } @else if (!applicants()?.data?.length) {
+          <cc-state
+            title="No interest yet"
+            message="People who want to join your commute will appear here."
+          />
+        } @else {
+          @if (reviewApplicants().length) {
+            <h2>Interested passengers</h2>
+            <ul class="applicant-list">
+              @for (i of reviewApplicants(); track i.id) {
+                <li class="panel applicant">
+                  <div>
+                    <strong>{{ i.user?.name }}</strong>
+                    <span class="badge">{{ i.status }}</span>
+                  </div>
+                  @if (active && i.status === 'pending') {
+                    <div class="actions">
+                      <button
+                        class="button"
+                        (click)="decide(i.id, 'accepted')"
+                        [disabled]="busy() || p.availableSeats === 0"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        class="button secondary"
+                        (click)="decide(i.id, 'declined')"
+                        [disabled]="busy()"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+          <cc-pagination
+            [page]="applicantPage()"
+            [totalPages]="applicants()!.totalPages"
+            (change)="loadApplicants($event)"
+          />
+
+          @if (acceptedApplicants().length) {
+            <section
+              id="conversations"
+              class="owner-conversations"
+              aria-labelledby="conversation-title"
+            >
+              <h2 id="conversation-title">Passengers</h2>
+              <button class="icon-action" type="button" (click)="openChat()">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M21 12a8 8 0 0 1-8 8H7l-4 2 1.5-4A8 8 0 1 1 21 12Z" />
+                </svg>
+                <span>Open conversations</span>
+                <span class="action-count">{{ acceptedApplicants().length }}</span>
+              </button>
+            </section>
+          }
+        }
+      </section>
+    }
+  }
+  @if (notice()) {
+    <p class="success-banner" role="status">{{ notice() }}</p>
+  }
+</section>
+@if (chatOpen()) {
+  <div class="chat-backdrop" (click)="closeChat()">
+    <section
+      class="chat-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="chat-dialog-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="chat-dialog-heading">
+        <div>
+          <p class="eyebrow">PRIVATE CONVERSATION</p>
+          <h2 id="chat-dialog-title">Messages</h2>
+        </div>
+        <button
+          class="icon-button"
+          type="button"
+          aria-label="Close conversation"
+          (click)="closeChat()"
+        >
+          ×
+        </button>
+      </header>
+
+      <div class="chat-dialog-content">
+        @if (isOwner()) {
+          <div class="chat-user-picker" aria-label="Choose a passenger">
+            @for (interest of acceptedApplicants(); track interest.id) {
+              <button
+                type="button"
+                [class.selected]="selectedChatId() === interest.id"
+                (click)="selectedChatId.set(interest.id)"
+              >
+                {{ interest.user?.name || 'Passenger' }}
+              </button>
+            }
+          </div>
+        }
+        @if (selectedChat(); as conversation) {
+          <cc-chat
+            [interestId]="conversation.id"
+            [participantName]="selectedChatName()"
+            [readOnly]="isHistory"
+          />
+        } @else {
+          <div class="chat-placeholder">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M21 12a8 8 0 0 1-8 8H7l-4 2 1.5-4A8 8 0 1 1 21 12Z" />
+            </svg>
+            <p>Select a passenger to open your private conversation.</p>
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+}
+@if (otpInterest(); as passenger) {
+  <div class="chat-backdrop" (click)="closeOtpVerification()">
+    <section
+      class="otp-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="otp-dialog-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="chat-dialog-heading">
+        <div>
+          <p class="eyebrow">RIDE VERIFICATION</p>
+          <h2 id="otp-dialog-title">
+            Verify {{ passenger.user?.name || 'passenger' }}
+          </h2>
+        </div>
+        <button
+          class="icon-button"
+          type="button"
+          aria-label="Close OTP verification"
+          (click)="closeOtpVerification()"
+        >
+          ×
+        </button>
+      </header>
+      @if (otpError()) {
+        <p class="error-banner otp-error" role="alert">
+          {{ otpError() }}
+        </p>
+      }
+      @if (unverifiedApplicants().length > 1) {
+        <div class="otp-passenger-picker" aria-label="Choose a passenger to verify">
+          @for (interest of unverifiedApplicants(); track interest.id) {
+            <button
+              type="button"
+              [class.selected]="otpInterestId() === interest.id"
+              (click)="otpInterestId.set(interest.id); otp.set(''); otpError.set('')"
+            >
+              {{ interest.user?.name || 'Passenger' }}
+            </button>
+          }
+        </div>
+      }
+      <form
+        class="otp-verification"
+        (submit)="$event.preventDefault(); verifyOtp(passenger.id)"
+      >
+        <label for="ride-otp">Six-digit passenger code</label>
+        <div>
+          <input
+            id="ride-otp"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="6"
+            pattern="[0-9]{6}"
+            [value]="otp()"
+            (input)="otp.set($any($event.target).value); otpError.set('')"
+          />
+          <button
+            class="button"
+            type="submit"
+            [disabled]="busy() || otp().length !== 6"
+          >
+            Verify passenger
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+@if (passengerOtpOpen() && post()?.myInterest?.rideOtp; as rideOtp) {
+  <div class="chat-backdrop" (click)="passengerOtpOpen.set(false)">
+    <section
+      class="otp-dialog ride-code-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ride-code-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="chat-dialog-heading">
+        <div>
+          <p class="eyebrow">SAFE RIDE CODE</p>
+          <h2 id="ride-code-title">Your pickup code</h2>
+        </div>
+        <button
+          class="icon-button"
+          type="button"
+          aria-label="Close ride code"
+          (click)="passengerOtpOpen.set(false)"
+        >
+          ×
+        </button>
+      </header>
+      <div class="ride-code-content">
+        <strong>{{ rideOtp }}</strong>
+        <p>Share this code only with the driver when you meet.</p>
+      </div>
+    </section>
+  </div>
+}
+@if (mapMode(); as mode) {
+  <cc-map-picker
+    [mode]="mode"
+    [initialPoints]="mapPoints()"
+    (closed)="mapMode.set(null)"
+  />
+}

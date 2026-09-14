@@ -1,0 +1,29 @@
+<section class="page-heading">
+  <div>
+    <h1>My dashboard</h1>
+    <p>Your upcoming commutes and active interests.</p>
+  </div>
+  <a class="button" routerLink="/commutes/new">+ Offer a commute</a>
+</section>
+
+@if (loading()) {
+  <cc-state kind="loading" title="Loading your dashboard…" />
+} @else if (error()) {
+  <cc-state
+    kind="error"
+    title="Couldn’t load your dashboard"
+    [message]="error()"
+    (retry)="load()"
+  />
+} @else if (!cards().length) {
+  <cc-state
+    title="No upcoming commutes"
+    message="Offer a commute or find a ride for your next journey."
+  />
+} @else {
+  <div class="card-grid">
+    @for (post of cards(); track post.id) {
+      <cc-commute-card [post]="post" />
+    }
+  </div>
+}

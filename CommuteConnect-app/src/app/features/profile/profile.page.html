@@ -1,0 +1,149 @@
+<section class="settings-page">
+  <header class="settings-title">
+    <p class="eyebrow">SETTINGS</p>
+    <h1>Account & privacy</h1>
+    <p>Manage your account details and data.</p>
+  </header>
+
+  @if (error()) {
+    <p class="error-banner" role="alert">{{ error() }}</p>
+  }
+
+  <div class="settings-layout">
+    <nav class="settings-nav" aria-label="Profile sections">
+      <a class="active" href="#account">Account</a>
+      <a routerLink="/history">View history</a>
+    </nav>
+
+    <div class="settings-content">
+      <section id="account" class="settings-section profile-details">
+        <header class="settings-section-heading">
+          <div>
+            <h2>Account</h2>
+            <p>Your CommuteConnect identity.</p>
+          </div>
+          @if (!editing()) {
+            <button class="button secondary" type="button" (click)="edit()">
+              Edit profile
+            </button>
+          }
+        </header>
+
+        @if (!editing()) {
+          <dl class="account-rows">
+            <div>
+              <dt>Name</dt>
+              <dd>{{ auth.user()?.name }}</dd>
+            </div>
+            <div>
+              <dt>Email</dt>
+              <dd>{{ auth.user()?.email }}</dd>
+            </div>
+            <div>
+              <dt>Date of birth</dt>
+              <dd>{{ auth.user()?.dob | date: 'd MMMM y' }}</dd>
+            </div>
+            <div>
+              <dt>Sex</dt>
+              <dd>{{ sexLabel }}</dd>
+            </div>
+          </dl>
+        } @else {
+          <form
+            class="editor settings-form"
+            [formGroup]="profileForm"
+            (ngSubmit)="save()"
+          >
+            <cc-field
+              fieldId="profile-name"
+              label="Full name"
+              [control]="profileForm.controls.name"
+              autocomplete="name"
+              [maxLength]="100"
+            />
+
+            <p class="field">
+              <span class="field-label">Email</span>
+              <strong>{{ auth.user()?.email }}</strong>
+              <span class="field-help">Your sign-in email cannot be edited.</span>
+            </p>
+
+            <div class="form-row">
+              <cc-date-picker
+                fieldId="profile-dob"
+                label="Date of birth"
+                formControlName="dob"
+                [control]="profileForm.controls.dob"
+                minDate="1900-01-01"
+                [maxDate]="maxDob"
+              />
+              <cc-select
+                fieldId="profile-sex"
+                label="Sex"
+                formControlName="sex"
+                [control]="profileForm.controls.sex"
+                [options]="sexOptions"
+              />
+            </div>
+
+            <div class="actions">
+              <button class="button" type="submit" [disabled]="busy()">
+                {{ busy() ? 'Saving…' : 'Save profile' }}
+              </button>
+              <button class="button secondary" type="button" (click)="cancelEdit()">
+                Cancel
+              </button>
+            </div>
+          </form>
+        }
+      </section>
+
+      <section id="delete-account" class="settings-section danger-zone">
+        <header class="settings-section-heading">
+          <div>
+            <h2>Delete account</h2>
+            <p>Remove your account and operational data.</p>
+          </div>
+        </header>
+        <p>
+          This permanently removes your commutes, interests, conversations, and sessions.
+          Your name and email are retained as a limited legal record. Your date of birth
+          and sex are removed.
+        </p>
+
+        @if (!confirmDelete()) {
+          <button class="button danger" type="button" (click)="confirmDelete.set(true)">
+            Delete my account
+          </button>
+        } @else {
+          <form [formGroup]="deleteForm" (ngSubmit)="deleteAccount()">
+            <cc-field
+              fieldId="delete-password"
+              label="Enter your password to confirm"
+              type="password"
+              autocomplete="current-password"
+              [control]="deleteForm.controls.password"
+            />
+            <div class="actions">
+              <button class="button danger" type="submit" [disabled]="deleting()">
+                {{ deleting() ? 'Deleting…' : 'Permanently delete account' }}
+              </button>
+              <button
+                class="button secondary"
+                type="button"
+                (click)="confirmDelete.set(false)"
+                [disabled]="deleting()"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        }
+      </section>
+    </div>
+  </div>
+
+  @if (notice()) {
+    <p class="success-banner" role="status">{{ notice() }}</p>
+  }
+</section>

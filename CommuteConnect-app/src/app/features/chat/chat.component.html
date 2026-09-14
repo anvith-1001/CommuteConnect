@@ -1,0 +1,55 @@
+<section class="chat-panel panel" aria-label="Commute conversation">
+  <div class="chat-heading">
+    <h2>
+      {{ participantName() ? 'Chat with ' + participantName() : 'Plan your pickup' }}
+    </h2>
+  </div>
+
+  @if (error()) {
+    <p class="error-banner" role="alert">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <cc-state kind="loading" title="Loading conversation…" />
+  } @else if (!messages().length) {
+    <p class="chat-empty">Say hello and agree on a safe, public pickup point.</p>
+  } @else {
+    <ol class="message-list" aria-live="polite">
+      @for (message of messages(); track message.id) {
+        <li [class.mine]="message.senderId === auth.user()?.id">
+          <div class="message-meta">
+            <strong>{{ message.sender.name }}</strong>
+            <time [attr.datetime]="message.createdAt">
+              {{ message.createdAt | date: 'short' }}
+            </time>
+          </div>
+          <p>{{ message.body }}</p>
+        </li>
+      }
+    </ol>
+  }
+
+  @if (!readOnly()) {
+    <form class="message-form" [formGroup]="form" (ngSubmit)="send()">
+      <label for="chat-message">Message</label>
+      <div class="message-composer">
+        <textarea
+          id="chat-message"
+          formControlName="body"
+          rows="2"
+          maxlength="1000"
+          placeholder="Message fellow commuter..."
+          (keydown.enter)="handleEnter($event)"
+        ></textarea>
+        <button class="button" type="submit" [disabled]="sending() || !connected()">
+          {{ sending() ? 'Sending…' : connected() ? 'Send' : 'Connecting…' }}
+        </button>
+      </div>
+    </form>
+  } @else {
+    <p class="chat-read-only">
+      This ride has ended. The conversation is available as history.
+    </p>
+  }
+
+</section>

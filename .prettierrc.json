@@ -1,0 +1,16 @@
+{
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 90,
+  "overrides": [
+    {
+      "files": "CommuteConnect-app/src/**/*.html",
+      "options": {
+        "parser": "angular"
+      }
+    }
+  ],
+  "tabWidth": 2,
+  "useTabs": false,
+  "htmlWhitespaceSensitivity": "ignore"
+}

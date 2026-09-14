@@ -1,0 +1,88 @@
+<section class="commute-home" [class.has-results]="searched()">
+  <header class="commute-welcome">
+    <h1>Welcome, {{ firstName() }}.</h1>
+    <p>Where would you like to go today?</p>
+    <a class="button" routerLink="/commutes/new">
+      <span aria-hidden="true">＋</span>
+      Offer a commute 
+    </a>
+  </header>
+
+  @if (searched() && error()) {
+    <p class="error-banner" role="alert">
+      We couldn’t load your commute search. {{ error() }}
+    </p>
+  }
+
+  <div class="home-section-heading">
+    <h2>Find your ride</h2>
+  </div>
+
+  <form class="search-bar panel" [formGroup]="form" (ngSubmit)="search()">
+    <div class="route-search-fields">
+      <cc-field
+        fieldId="origin"
+        label="From"
+        placeholder="e.g. Indiranagar"
+        [control]="form.controls.origin"
+        [maxLength]="120"
+      />
+      <button
+        class="swap-route"
+        type="button"
+        aria-label="Swap origin and destination"
+        title="Swap route"
+        (click)="swap()"
+        [disabled]="!form.controls.origin.value && !form.controls.destination.value"
+      >
+        ⇄
+      </button>
+      <cc-field
+        fieldId="destination"
+        label="To"
+        placeholder="e.g. Whitefield"
+        [control]="form.controls.destination"
+        [maxLength]="120"
+      />
+    </div>
+    <div class="search-actions">
+      <button class="button" type="submit" [disabled]="loading()">Search</button>
+      <button
+        class="button secondary"
+        type="button"
+        (click)="clear()"
+        [disabled]="
+          loading() || (!form.controls.origin.value && !form.controls.destination.value)
+        "
+      >
+        Clear
+      </button>
+    </div>
+    <p class="search-behavior" aria-live="polite">
+      {{ loading() ? 'Updating results…' : 'Results update as you type.' }}
+    </p>
+  </form>
+</section>
+
+@if (searched() && loading()) {
+  <cc-state kind="loading" title="Finding commutes…" />
+} @else if (searched() && !error() && !result()?.data?.length) {
+  <cc-state
+    title="No commutes found"
+    message="Try a different origin or destination, or offer a commute of your own."
+  />
+} @else if (searched() && !error() && result()?.data?.length) {
+  <p class="results-caption">
+    {{ result()!.total }} upcoming commutes · Times shown in your local timezone
+  </p>
+  <div class="card-grid">
+    @for (post of result()!.data; track post.id) {
+      <cc-commute-card [post]="post" />
+    }
+  </div>
+  <cc-pagination
+    [page]="page()"
+    [totalPages]="result()!.totalPages"
+    (change)="load($event)"
+  />
+}

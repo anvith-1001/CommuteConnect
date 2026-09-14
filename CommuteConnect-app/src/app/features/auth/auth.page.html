@@ -1,0 +1,256 @@
+<section
+  class="auth-layout"
+  [class.login-mode]="!register"
+>
+  <div class="auth-intro">
+    <p class="eyebrow">GOING THE SAME WAY</p>
+
+    <h1>
+      Your route.
+      <br />
+      Better together.
+    </h1>
+
+    <p>
+      Find someone heading your way or make room for one more.
+    </p>
+
+    <div class="route-illustration" aria-hidden="true">
+      <div class="route-place">
+        <span class="route-dot"></span>
+        <span>From home</span>
+      </div>
+
+      <div class="route-line">
+        <span>Share the way</span>
+      </div>
+
+      <div class="route-place">
+        <span class="route-dot"></span>
+        <span>To work</span>
+      </div>
+    </div>
+
+    <p class="auth-note">
+      One route. Fewer empty seats.
+    </p>
+  </div>
+
+  <div class="panel auth-panel">
+    @if (error()) {
+      <p class="error-banner" role="alert">
+        {{ error() }}
+      </p>
+    }
+
+    @if (register) {
+      <div class="registration-progress">
+        <div class="progress-meta">
+          <span>
+            Step {{ currentStep() + 1 }} of {{ totalSteps }}
+          </span>
+
+          <span>
+            {{ currentStepTitle() }}
+          </span>
+        </div>
+
+        <div
+          class="progress-track"
+          role="progressbar"
+          [attr.aria-valuemin]="1"
+          [attr.aria-valuemax]="totalSteps"
+          [attr.aria-valuenow]="currentStep() + 1"
+          [attr.aria-label]="'Registration progress: ' + currentStepTitle()"
+        >
+          <div
+            class="progress-value"
+            [style.width.%]="progressPercentage()"
+          ></div>
+        </div>
+      </div>
+    }
+
+    <div class="auth-heading">
+      <h2>
+        {{
+          register
+            ? currentStepHeading()
+            : 'Welcome back'
+        }}
+      </h2>
+
+      <p class="subtle">
+        {{
+          register
+            ? currentStepDescription()
+            : 'Sign in to find people going your way.'
+        }}
+      </p>
+    </div>
+
+    <form
+      [formGroup]="form"
+      (ngSubmit)="register ? handleRegisterSubmit() : submit()"
+      novalidate
+    >
+      @if (register) {
+        <div
+          class="registration-step"
+          [attr.data-step]="currentStep()"
+        >
+          @switch (currentStep()) {
+            @case (0) {
+              <div class="step-content">
+                <cc-field
+                  fieldId="name"
+                  label="Full name"
+                  [control]="form.controls.name"
+                  autocomplete="name"
+                  [maxLength]="100"
+                />
+              </div>
+            }
+
+            @case (1) {
+              <div class="step-content">
+                <cc-field
+                  fieldId="email"
+                  label="Email"
+                  [control]="form.controls.email"
+                  type="email"
+                  autocomplete="email"
+                  [maxLength]="254"
+                />
+
+                <p class="privacy-note">
+                  Your email is visible only to you.
+                </p>
+              </div>
+            }
+
+            @case (2) {
+              <div class="step-content">
+                <cc-field
+                  fieldId="password"
+                  label="Password"
+                  [control]="form.controls.password"
+                  type="password"
+                  autocomplete="new-password"
+                  hint="Use at least 12 characters."
+                  [maxLength]="128"
+                />
+
+                <p class="privacy-note">
+                  Choose something unique that you don't use elsewhere.
+                </p>
+              </div>
+            }
+
+            @case (3) {
+              <div class="step-content">
+                <cc-date-picker
+                  fieldId="dob"
+                  label="Date of birth"
+                  formControlName="dob"
+                  [control]="form.controls.dob"
+                  minDate="1900-01-01"
+                  [maxDate]="maxDob"
+                />
+
+                <p class="privacy-note">
+                  Your date of birth is visible only to you.
+                </p>
+              </div>
+            }
+
+            @case (4) {
+              <div class="step-content">
+                <cc-select
+                  fieldId="sex"
+                  label="Sex"
+                  formControlName="sex"
+                  [control]="form.controls.sex"
+                  [options]="sexOptions"
+                />
+
+                <p class="privacy-note">
+                  Your sex is visible only to you.
+                </p>
+              </div>
+            }
+          }
+        </div>
+
+        <div class="step-actions">
+          @if (currentStep() > 0) {
+            <button
+              class="button step-back"
+              type="button"
+              [disabled]="busy()"
+              (click)="previousStep()"
+            >
+              Back
+            </button>
+          }
+
+          <button
+            class="button step-primary"
+            type="submit"
+            [disabled]="busy()"
+          >
+            @if (busy()) {
+              Please wait…
+            } @else if (isLastStep()) {
+              Create account
+            } @else {
+              Continue
+            }
+          </button>
+        </div>
+      } @else {
+        <cc-field
+          fieldId="email"
+          label="Email"
+          [control]="form.controls.email"
+          type="email"
+          autocomplete="email"
+          [maxLength]="254"
+        />
+
+        <cc-field
+          fieldId="password"
+          label="Password"
+          [control]="form.controls.password"
+          type="password"
+          autocomplete="current-password"
+          [maxLength]="128"
+        />
+
+        <button
+          class="button full"
+          type="submit"
+          [disabled]="busy()"
+        >
+          {{ busy() ? 'Please wait…' : 'Sign in' }}
+        </button>
+      }
+    </form>
+
+    <p class="auth-switch">
+      {{
+        register
+          ? 'Already have an account?'
+          : 'New to CommuteConnect?'
+      }}
+
+      <a [routerLink]="register ? '/login' : '/register'">
+        {{
+          register
+            ? 'Sign in'
+            : 'Create an account'
+        }}
+      </a>
+    </p>
+  </div>
+</section>

@@ -1,0 +1,48 @@
+<article class="commute-card">
+  <div class="card-top">
+    <span class="eyebrow">{{ post().departureAt | date: 'EEE, d MMM' }}</span>
+    @if (history()) {
+      <span class="badge muted">
+        {{
+          post().deletedAt
+            ? 'Cancelled'
+            : post().rideStatus === 'completed'
+              ? 'Completed'
+              : 'Past'
+        }}
+      </span>
+    } @else {
+      <span class="badge" [class.muted]="post().deletedAt">
+        {{
+          post().deletedAt
+            ? 'Cancelled'
+            : post().rideStatus === 'in_progress'
+              ? 'On ride'
+              : post().availableSeats + ' seats left'
+        }}
+      </span>
+    }
+  </div>
+  <h2>
+    <a [routerLink]="['/commutes', post().id]">
+      {{ post().origin }}
+      <span class="route-arrow" aria-hidden="true">→</span>
+      {{ post().destination }}
+    </a>
+  </h2>
+  <p class="departure">
+    {{ post().departureAt | date: 'shortTime' }}
+    <span>· {{ post().owner.name }}</span>
+  </p>
+  @if (post().notes) {
+    <p class="card-notes">{{ post().notes }}</p>
+  }
+  <div class="card-bottom">
+    @if (post().myInterest) {
+      <span class="badge">{{ post().myInterest?.status }}</span>
+    }
+    <a class="text-link" [routerLink]="['/commutes', post().id]">
+      View commute
+    </a>
+  </div>
+</article>

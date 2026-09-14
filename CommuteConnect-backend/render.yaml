@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: commuteconnect-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: /bin/sh -c "node dist/database/migrate.js && exec node dist/main.js"
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        value: 'true'
+      - key: DATABASE_SSL_CA_FILE
+        value: /etc/secrets/prod-supabase.crt
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_ORIGINS
+        sync: false

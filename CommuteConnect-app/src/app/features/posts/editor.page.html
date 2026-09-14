@@ -1,0 +1,358 @@
+<section class="narrow editor-page">
+  <a class="text-link dashboard-link" routerLink="/dashboard">
+    ← My dashboard
+  </a>
+
+  <header class="page-heading">
+    <div>
+      <h1>{{ id ? 'Edit commute' : 'Offer a commute' }}</h1>
+
+      <p>
+        {{
+          id
+            ? 'Update the number of passenger seats available.'
+            : ''
+        }}
+      </p>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <cc-state
+      kind="loading"
+      title="Loading your commute…"
+    />
+  } @else if (loadError()) {
+    <cc-state
+      kind="error"
+      title="Couldn’t open this commute"
+      [message]="loadError()"
+      (retry)="load()"
+    />
+  } @else {
+    <form
+      class="editor"
+      [formGroup]="form"
+      (ngSubmit)="save()"
+      (keydown.enter)="handleEnter($event)"
+    >
+      @if (error()) {
+        <p class="error-banner" role="alert">
+          {{ error() }}
+        </p>
+      }
+
+      @if (!id) {
+        <!-- progress -->
+        <div class="wizard-progress">
+          <div class="progress-track">
+            <div
+              class="progress-value"
+              [style.width.%]="progress()"
+            ></div>
+          </div>
+
+          <span class="progress-text">
+            Step {{ step() }} of {{ totalSteps }}
+          </span>
+        </div>
+
+        <!-- STEP 1 -->
+        @if (step() === 1) {
+          <section class="wizard-step">
+            <div class="step-copy">
+              <span class="step-label">ORIGIN</span>
+
+              <h2>Where are you leaving from?</h2>
+
+              <p>
+                Enter the place where your commute begins.
+              </p>
+            </div>
+
+            <cc-field
+              fieldId="origin"
+              label="Origin"
+              [control]="form.controls.origin"
+              [maxLength]="120"
+              placeholder="e.g. Indiranagar"
+            />
+          </section>
+        }
+
+        <!-- STEP 2 -->
+        @if (step() === 2) {
+          <section class="wizard-step">
+            <div class="step-copy">
+              <span class="step-label">DESTINATION</span>
+
+              <h2>Where are you going?</h2>
+
+              <p>
+                Enter your final destination.
+              </p>
+            </div>
+
+            <cc-field
+              fieldId="destination"
+              label="Destination"
+              [control]="form.controls.destination"
+              [maxLength]="120"
+              placeholder="e.g. Electronic City"
+            />
+          </section>
+        }
+
+        <!-- STEP 3 -->
+        @if (step() === 3) {
+          <section class="wizard-step">
+            <div class="step-copy">
+              <span class="step-label">VIA</span>
+
+              <h2>Going through somewhere?</h2>
+
+              <p>
+                Add a main area or landmark along your route.
+                Leave it empty if you're going directly.
+              </p>
+            </div>
+
+            <cc-field
+              fieldId="via"
+              label="Via (optional)"
+              [control]="form.controls.via"
+              [maxLength]="120"
+              placeholder="e.g. Malleswaram"
+            />
+          </section>
+        }
+
+        <!-- STEP 4 -->
+        @if (step() === 4) {
+          <section class="wizard-step">
+            <div class="step-copy">
+              <span class="step-label">MAP</span>
+
+              <h2>Pin your origin</h2>
+
+              <p>
+                Choose the starting point where passengers will meet you.
+              </p>
+            </div>
+
+            <div class="map-action">
+              <button
+                class="button"
+                type="button"
+                (click)="openMap()"
+              >
+                {{
+                  hasRequiredMapPoints()
+                    ? 'Change origin pin'
+                    : 'Pin on map'
+                }}
+              </button>
+
+              @if (hasRequiredMapPoints()) {
+                <span class="map-success">
+                  Origin selected
+                </span>
+              }
+            </div>
+          </section>
+        }
+
+        <!-- STEP 5 -->
+        @if (step() === 5) {
+          <section class="wizard-step">
+            <div class="step-copy">
+              <span class="step-label">DEPARTURE</span>
+
+              <h2>When are you leaving?</h2>
+
+              <p>
+                Choose the date and time for this commute.
+              </p>
+            </div>
+
+            <cc-date-picker
+              fieldId="departure"
+              label="Departure date and time"
+              formControlName="departureAt"
+              [control]="form.controls.departureAt"
+              [enableTime]="true"
+              [minDate]="'today'"
+              hint="Enter the time in your local timezone."
+            />
+          </section>
+        }
+
+        <!-- STEP 6 -->
+        @if (step() === 6) {
+          <section class="wizard-step">
+            <div class="step-copy">
+              <span class="step-label">VEHICLE</span>
+
+              <h2>Which vehicle are you driving?</h2>
+
+              <p>
+                Your vehicle number is only shared with accepted passengers.
+              </p>
+            </div>
+
+            <cc-field
+              fieldId="vehicle-number"
+              label="Vehicle number"
+              [control]="form.controls.vehicleNumber"
+              [maxLength]="20"
+              placeholder="e.g. KA01AB1234"
+              hint="Use 4–20 letters and numbers."
+            />
+          </section>
+        }
+
+        <!-- STEP 7 -->
+        @if (step() === 7) {
+          <section class="wizard-step">
+            <div class="step-copy">
+              <span class="step-label">SEATS</span>
+
+              <h2>How many seats are available?</h2>
+
+              <p>
+                Enter the number of passenger seats you're offering.
+              </p>
+            </div>
+
+            <cc-field
+              fieldId="seats"
+              label="Passenger seats"
+              type="number"
+              [control]="form.controls.seats"
+              [min]="1"
+              [max]="8"
+              hint="Between 1 and 8 seats."
+            />
+          </section>
+        }
+
+        <!-- STEP 8 -->
+        @if (step() === 8) {
+          <section class="wizard-step">
+            <div class="step-copy">
+              <span class="step-label">NOTES</span>
+
+              <h2>Anything else passengers should know?</h2>
+
+              <p>
+                Pickup details, luggage space or anything useful.
+                This is optional.
+              </p>
+            </div>
+
+            <cc-field
+              fieldId="notes"
+              label="Notes (optional)"
+              type="textarea"
+              [control]="form.controls.notes"
+              [maxLength]="1000"
+              placeholder="Anything passengers should know…"
+            />
+          </section>
+        }
+
+        <div class="wizard-navigation">
+          <div>
+            @if (step() > 1) {
+              <button
+                class="button secondary"
+                type="button"
+                (click)="previousStep()"
+              >
+                Back
+              </button>
+            }
+          </div>
+
+          <div class="nav-right">
+            <a
+              class="button secondary"
+              routerLink="/dashboard"
+            >
+              Cancel
+            </a>
+
+            @if (step() < totalSteps) {
+              <button
+                class="button"
+                type="button"
+                (click)="nextStep()"
+              >
+                Continue
+              </button>
+            } @else {
+              <button
+                class="button"
+                type="submit"
+                [disabled]="busy()"
+              >
+                {{ busy() ? 'Posting…' : 'Post commute' }}
+              </button>
+            }
+          </div>
+        </div>
+      } @else {
+        <section class="wizard-step">
+          <div class="step-copy">
+            <span class="step-label">SEATS</span>
+
+            <h2>Passenger seats</h2>
+
+            <p>
+              Update the total number of passenger seats available.
+            </p>
+          </div>
+
+          <cc-field
+            fieldId="seats"
+            label="Passenger seats"
+            type="number"
+            [control]="form.controls.seats"
+            [min]="1"
+            [max]="8"
+          />
+        </section>
+
+        <div class="wizard-navigation">
+          <div></div>
+
+          <div class="nav-right">
+            <a
+              class="button secondary"
+              routerLink="/dashboard"
+            >
+              Cancel
+            </a>
+
+            <button
+              class="button"
+              type="submit"
+              [disabled]="busy()"
+            >
+              {{ busy() ? 'Saving…' : 'Save changes' }}
+            </button>
+          </div>
+        </div>
+      }
+    </form>
+  }
+</section>
+
+@if (mapOpen()) {
+  <cc-map-picker
+    mode="route"
+    [initialPoints]="mapPoints()"
+    (pointSelected)="setMapPoint($event)"
+    (closed)="closeMap()"
+  />
+}

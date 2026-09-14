@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.angular/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+CommuteConnect-app/public/config.json
+test-results/
+playwright-report/
+.dist/

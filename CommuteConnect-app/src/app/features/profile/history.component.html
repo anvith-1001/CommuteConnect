@@ -1,0 +1,56 @@
+<section class="profile-history" aria-labelledby="history-title">
+  <a class="text-link" routerLink="/profile">← Profile</a>
+  <header class="page-heading history-page-heading">
+    <div>
+      <h1 id="history-title">History</h1>
+      <p>Your past posts and closed interests.</p>
+    </div>
+  </header>
+  <div class="history-heading">
+    <div class="segmented" aria-label="History section">
+      <button
+        type="button"
+        [class.selected]="tab() === 'posts'"
+        [attr.aria-pressed]="tab() === 'posts'"
+        (click)="selectTab('posts')"
+      >
+        My Posts
+      </button>
+      <button
+        type="button"
+        [class.selected]="tab() === 'interests'"
+        [attr.aria-pressed]="tab() === 'interests'"
+        (click)="selectTab('interests')"
+      >
+        My Interests
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <cc-state kind="loading" title="Loading history…" />
+  } @else if (error()) {
+    <cc-state
+      kind="error"
+      title="Couldn’t load history"
+      [message]="error()"
+      (retry)="load(page())"
+    />
+  } @else if (!cards().length) {
+    <cc-state
+      title="No history yet"
+      [message]="
+        tab() === 'posts'
+          ? 'Past and cancelled commutes will appear here.'
+          : 'Past, declined, and withdrawn interests will appear here.'
+      "
+    />
+  } @else {
+    <div class="card-grid">
+      @for (post of cards(); track post.id) {
+        <cc-commute-card [post]="post" [history]="true" />
+      }
+    </div>
+    <cc-pagination [page]="page()" [totalPages]="totalPages()" (change)="load($event)" />
+  }
+</section>

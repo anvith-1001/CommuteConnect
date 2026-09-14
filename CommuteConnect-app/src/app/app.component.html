@@ -1,0 +1,149 @@
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <a class="brand" routerLink="/commutes">
+    <img class="brand-mark" src="/commute-icon.svg" alt="" aria-hidden="true" />
+    CommuteConnect
+  </a>
+  @if (auth.signedIn()) {
+    <nav aria-label="Main navigation">
+      <a
+        routerLink="/commutes"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        aria-label="Find a commute"
+      >
+        <span class="nav-label-wide">Find a commute</span>
+        <span class="nav-label-compact">Find</span>
+      </a>
+      <div class="notification-menu" (click)="$event.stopPropagation()">
+        <button
+          class="notification-button"
+          type="button"
+          aria-label="Notifications"
+          [attr.aria-expanded]="notificationsOpen()"
+          (click)="toggleNotifications($event)"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+          </svg>
+          @if (unreadNotifications()) {
+            <span class="notification-count">
+              {{ unreadNotifications() > 99 ? '99+' : unreadNotifications() }}
+            </span>
+          }
+        </button>
+        @if (notificationsOpen()) {
+          <section class="notification-popover" aria-label="Notifications">
+            <div class="notification-heading">
+              <h2>Notifications</h2>
+              @if (unreadNotifications()) {
+                <button type="button" (click)="markAllNotificationsRead($event)">
+                  Mark all read
+                </button>
+              }
+            </div>
+            @if (notificationsLoading()) {
+              <p class="notification-state">Loading…</p>
+            } @else if (notificationsError()) {
+              <p class="notification-state" role="alert">Couldn’t load notifications.</p>
+            } @else if (!notifications().length) {
+              <p class="notification-state">You’re all caught up.</p>
+            } @else {
+              <ol class="notification-list">
+                @for (notification of notifications(); track notification.id) {
+                  <li [class.unread]="!notification.readAt">
+                    <button type="button" (click)="openNotification(notification)">
+                      <span>
+                        <strong>{{ notification.title }}</strong>
+                        <small>{{ notification.body }}</small>
+                      </span>
+                      <time [attr.datetime]="notification.createdAt">
+                        {{ notification.createdAt | date: 'short' }}
+                      </time>
+                    </button>
+                  </li>
+                }
+              </ol>
+            }
+            @if (notifications().length) {
+              <div class="notification-footer">
+                @if (confirmClearNotifications()) {
+                  <span>Clear every notification?</span>
+                  <button type="button" (click)="clearNotifications($event)">
+                    Yes, clear
+                  </button>
+                  <button type="button" (click)="confirmClearNotifications.set(false)">
+                    Cancel
+                  </button>
+                } @else {
+                  <button type="button" (click)="confirmClearNotifications.set(true)">
+                    Clear notifications
+                  </button>
+                }
+              </div>
+            }
+          </section>
+        }
+      </div>
+      <a
+        routerLink="/dashboard"
+        routerLinkActive="active"
+        aria-label="My dashboard"
+      >
+        <span class="nav-label-wide">My dashboard</span>
+        <span class="nav-label-compact">Dashboard</span>
+      </a>
+      <a routerLink="/profile" routerLinkActive="active">Profile</a>
+      <button
+        class="nav-button"
+        type="button"
+        (click)="confirmSignOut.set(true)"
+        [disabled]="busy()"
+      >
+        Sign out
+      </button>
+    </nav>
+  }
+</header>
+@if (error()) {
+  <p class="error-banner" role="alert">{{ error() }}</p>
+}
+<main id="main" tabindex="-1"><router-outlet /></main>
+@if (confirmSignOut()) {
+  <div class="dialog-backdrop" (click)="confirmSignOut.set(false)">
+    <section
+      class="confirm-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="sign-out-title"
+      (click)="$event.stopPropagation()"
+    >
+      <p class="eyebrow">ACCOUNT</p>
+      <h2 id="sign-out-title">Sign out of CommuteConnect?</h2>
+      <p>You’ll need to sign in again to view your commutes and conversations.</p>
+      <div class="actions">
+        <button
+          class="button danger"
+          type="button"
+          (click)="logout()"
+          [disabled]="busy()"
+        >
+          {{ busy() ? 'Signing out…' : 'Sign out' }}
+        </button>
+        <button
+          class="button secondary"
+          type="button"
+          (click)="confirmSignOut.set(false)"
+          [disabled]="busy()"
+          autofocus
+        >
+          Cancel
+        </button>
+      </div>
+    </section>
+  </div>
+}
+<footer class="site-footer">
+  <span>CommuteConnect</span>
+  <span>A little company for your commute.</span>
+</footer>

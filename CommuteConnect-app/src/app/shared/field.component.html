@@ -1,0 +1,48 @@
+<div class="field">
+  <label [for]="fieldId()">{{ label() }}</label>
+  @if (invalid) {
+    <div [id]="fieldId() + '-help'" class="field-help field-error">
+      {{ message }}
+    </div>
+  }
+  @if (type() === 'textarea') {
+    <textarea
+      [id]="fieldId()"
+      [formControl]="control()"
+      rows="4"
+      [attr.maxlength]="maxLength()"
+      [attr.aria-invalid]="invalid"
+      [attr.aria-describedby]="fieldId() + '-help'"
+      [attr.placeholder]="placeholder()"
+    ></textarea>
+  } @else if (type() === 'number') {
+    <input
+      type="number"
+      [id]="fieldId()"
+      [formControl]="control()"
+      [min]="min()"
+      [max]="max()"
+      [attr.aria-invalid]="invalid"
+      [attr.aria-describedby]="fieldId() + '-help'"
+      [attr.placeholder]="placeholder()"
+    />
+  } @else {
+    <input
+      [id]="fieldId()"
+      [type]="type()"
+      [formControl]="control()"
+      [attr.autocomplete]="autocomplete()"
+      [attr.min]="min()"
+      [attr.max]="max()"
+      [attr.maxlength]="maxLength()"
+      [attr.aria-invalid]="invalid"
+      [attr.aria-describedby]="fieldId() + '-help'"
+      [attr.placeholder]="placeholder()"
+    />
+  }
+  @if (!invalid) {
+    <div [id]="fieldId() + '-help'" class="field-help">
+      {{ hint() }}
+    </div>
+  }
+</div>

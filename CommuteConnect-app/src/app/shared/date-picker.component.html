@@ -1,0 +1,25 @@
+<div class="field">
+  <label [for]="fieldId()">{{ label() }}</label>
+  @if (invalid) {
+    <div [id]="fieldId() + '-help'" class="field-help field-error">
+      {{ message }}
+    </div>
+  }
+  <input
+    #picker
+    [id]="fieldId()"
+    type="text"
+    autocomplete="off"
+    data-1p-ignore="true"
+    data-lpignore="true"
+    [disabled]="disabled"
+    [placeholder]="enableTime() ? 'Choose date and time' : 'Choose a date'"
+    [attr.aria-invalid]="invalid"
+    [attr.aria-describedby]="fieldId() + '-help'"
+  />
+  @if (!invalid) {
+    <div [id]="fieldId() + '-help'" class="field-help">
+      {{ hint() }}
+    </div>
+  }
+</div>
