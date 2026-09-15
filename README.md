@@ -1,6 +1,7 @@
 # CommuteConnect
 
 **Project URL:** https://commute-connect-one.vercel.app  
+( Since the project is deployed on render free instance, it will have a cold start )
 **Backend URL:** https://commuteconnect-backend.onrender.com
 
 > For security reasons, Swagger UI is disabled in production. Set `NODE_ENV=development` to access the Swagger / OpenAPI interface locally.
